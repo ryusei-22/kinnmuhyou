@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>勤務表自動生成システム v2.0</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            font-size: 13px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        
+        .section h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .input-group {
+            margin-bottom: 12px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 12px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 3px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .danger {
+            background-color: #e74c3c;
+        }
+        
+        .danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .success {
+            background-color: #27ae60;
+        }
+        
+        .success:hover {
+            background-color: #229954;
+        }
+        
+        .staff-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+        
+        .staff-item {
+            background: white;
+            padding: 12px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .staff-item h4 {
+            margin: 0 0 8px 0;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            margin: 8px 0;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            font-size: 11px;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin-right: 6px;
+        }
+        
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 10px;
+            table-layout: fixed;
+        }
+        
+        .schedule-table th,
+        .schedule-table td {
+            border: 1px solid #ccc;
+            padding: 3px;
+            text-align: center;
+            vertical-align: middle;
+            min-width: 25px;
+            max-width: 25px;
+            overflow: hidden;
+        }
+        
+        .schedule-table th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            font-size: 9px;
+        }
+        
+        .schedule-table .staff-name {
+            background-color: #ecf0f1;
+            font-weight: bold;
+            text-align: left;
+            padding-left: 5px;
+            min-width: 80px;
+            max-width: 80px;
+            font-size: 10px;
+        }
+        
+        .schedule-table .date-header {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            height: 60px;
+            font-size: 8px;
+        }
+        
+        .sunday-col {
+            background-color: #ffebee;
+        }
+        
+        .saturday-col {
+            background-color: #e3f2fd;
+        }
+        
+        .holiday-cell {
+            background-color: #ffcdd2;
+            color: #c62828;
+            font-weight: bold;
+        }
+        
+        .shift-早 { background-color: #fff3e0; }
+        .shift-準 { background-color: #e8f5e8; }
+        .shift-心 { background-color: #fce4ec; }
+        .shift-HBO { background-color: #f3e5f5; }
+        .shift-OPE { background-color: #e0f2f1; }
+        .shift-ME { background-color: #fff8e1; }
+        .shift-内 { background-color: #e1f5fe; }
+        .shift-日 { background-color: #ffffff; }
+        .shift-待1 { background-color: #ffecb3; }
+        .shift-待2 { background-color: #dcedc8; }
+        .shift-公 { background-color: #ffcdd2; color: #c62828; font-weight: bold; }
+        .shift-年 { background-color: #f8bbd9; color: #880e4f; font-weight: bold; }
+        
+        .calendar-input {
+            margin-top: 15px;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: white;
+        }
+        
+        .calendar-day {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            min-height: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        
+        .calendar-day:hover {
+            background-color: #f0f8ff;
+        }
+        
+        .calendar-day.sunday {
+            background-color: #ffebee;
+        }
+        
+        .calendar-day.public-holiday {
+            background-color: #ffcdd2;
+            color: #c62828;
+            font-weight: bold;
+        }
+        
+        .calendar-day.paid-leave {
+            background-color: #f8bbd9;
+            color: #880e4f;
+            font-weight: bold;
+        }
+        
+        .calendar-header {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            padding: 5px;
+            text-align: center;
+        }
+        
+        .role-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .supervisor {
+            background-color: #ff9800;
+        }
+        
+        .staff {
+            background-color: #4caf50;
+        }
+        
+        .error-cell {
+            background-color: #ffcdd2 !important;
+            color: #c62828;
+        }
+        
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 11px;
+        }
+        
+        .summary-table th,
+        .summary-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
+        
+        .summary-table th {
+            background-color: #34495e;
+            color: white;
+        }
+        
+        .flex-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+        
+        .flex-item {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .constraints {
+            background-color: #e8f4fd;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .success-msg {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .editable-cell {
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .editable-cell:hover {
+            background-color: #f0f8ff !important;
+        }
+        
+        .weekly-rule {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .holiday-indicator {
+            background-color: #ff9800;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .special-week-indicator {
+            background-color: #9c27b0;
+            color: white;
+            font-weight: bold;
+        }
+        
+        select.cell-select {
+            font-size: 9px;
+            padding: 2px;
+            border: none;
+            background: transparent;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>勤務表自動生成システム v2.0</h1>
+        
+        <!-- 制約条件設定 -->
+        <div class="section">
+            <h2>制約条件設定</h2>
+            <div class="constraints">
+                <h3>基本制約</h3>
+                <div class="flex-container">
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label for="maxMonthlyHolidays">月間最大休日数（1人あたり）:</label>
+                            <input type="number" id="maxMonthlyHolidays" value="10" min="4" max="15">
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label for="maxConsecutiveDays">最大連続勤務日数:</label>
+                            <input type="number" id="maxConsecutiveDays" value="6" min="3" max="10">
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>役職・組み合わせ制約</h3>
+                <div class="flex-container">
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label for="requireSupervisor">日勤・準夜に役職者必須:</label>
+                            <input type="checkbox" id="requireSupervisor" checked>
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label for="supervisorRatio">役職者の最低比率 (%):</label>
+                            <input type="number" id="supervisorRatio" value="30" min="10" max="80">
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>曜日別最大休日人数</h3>
+                <div class="flex-container">
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label for="maxHoliday_月">月曜日:</label>
+                            <input type="number" id="maxHoliday_月" value="4" min="1" max="15">
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label for="maxHoliday_火">火曜日:</label>
+                            <input type="number" id="maxHoliday_火" value="4" min="1" max="15">
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label for="maxHoliday_水">水曜日:</label>
+                            <input type="number" id="maxHoliday_水" value="4" min="1" max="15">
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label for="maxHoliday_木">木曜日:</label>
+                            <input type="number" id="maxHoliday_木" value="4" min="1" max="15">
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label for="maxHoliday_金">金曜日:</label>
+                            <input type="number" id="maxHoliday_金" value="3" min="1" max="15">
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label for="maxHoliday_土">土曜日:</label>
+                            <input type="number" id="maxHoliday_土" value="5" min="1" max="15">
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>祝日・特別日設定</h3>
+                <div class="flex-container">
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label for="holidayMaxCount">祝日の最大休日人数:</label>
+                            <input type="number" id="holidayMaxCount" value="8" min="1" max="20">
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label for="specialHolidays">祝日指定 (例: 1,11,23):</label>
+                            <input type="text" id="specialHolidays" placeholder="祝日の日付をカンマ区切りで入力" value="11,23">
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>特定週設定</h3>
+                <div id="weeklySettings">
+                    <div class="weekly-rule">
+                        <div class="flex-container">
+                            <div class="flex-item">
+                                <div class="input-group">
+                                    <label>第何週:</label>
+                                    <select class="week-number">
+                                        <option value="1">第1週</option>
+                                        <option value="2">第2週</option>
+                                        <option value="3">第3週</option>
+                                        <option value="4">第4週</option>
+                                        <option value="5">第5週</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex-item">
+                                <div class="input-group">
+                                    <label>曜日:</label>
+                                    <select class="week-day">
+                                        <option value="月">月曜日</option>
+                                        <option value="火">火曜日</option>
+                                        <option value="水">水曜日</option>
+                                        <option value="木">木曜日</option>
+                                        <option value="金">金曜日</option>
+                                        <option value="土">土曜日</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex-item">
+                                <div class="input-group">
+                                    <label>最大休日人数:</label>
+                                    <input type="number" class="week-max" value="6" min="1" max="20">
+                                </div>
+                            </div>
+                            <div class="flex-item">
+                                <button type="button" onclick="removeWeeklyRule(this)" class="danger" style="margin-top: 20px;">削除</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="addWeeklyRule()">+ 特定週ルール追加</button>
+            </div>
+        </div>
+        
+        <!-- スタッフ管理セクション -->
+        <div class="section">
+            <h2>スタッフ管理</h2>
+            <div class="flex-container">
+                <div class="flex-item">
+                    <div class="input-group">
+                        <label for="staffName">スタッフ名:</label>
+                        <input type="text" id="staffName" placeholder="スタッフ名を入力">
+                    </div>
+                    <button onclick="addStaff()">スタッフ追加</button>
+                    <button onclick="clearAllStaff()" class="danger">全スタッフクリア</button>
+                </div>
+                <div class="flex-item">
+                    <label>サンプルデータ:</label>
+                    <button onclick="loadSampleData()">サンプルデータを読み込む</button>
+                    <button onclick="load28StaffData()" class="success">28名データ読み込み</button>
+                </div>
+            </div>
+            <div id="staffList" class="staff-list"></div>
+        </div>
+        
+        <!-- 勤務表生成セクション -->
+        <div class="section">
+            <h2>勤務表生成</h2>
+            <div class="flex-container">
+                <div class="flex-item">
+                    <div class="input-group">
+                        <label for="year">年:</label>
+                        <input type="number" id="year" value="2025" min="2020" max="2030">
+                    </div>
+                </div>
+                <div class="flex-item">
+                    <div class="input-group">
+                        <label for="month">月:</label>
+                        <select id="month">
+                            <option value="1">1月</option>
+                            <option value="2">2月</option>
+                            <option value="3">3月</option>
+                            <option value="4">4月</option>
+                            <option value="5">5月</option>
+                            <option value="6">6月</option>
+                            <option value="7">7月</option>
+                            <option value="8" selected>8月</option>
+                            <option value="9">9月</option>
+                            <option value="10">10月</option>
+                            <option value="11">11月</option>
+                            <option value="12">12月</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <button onclick="generateSchedule()">勤務表生成</button>
+            <button onclick="exportToCSV()" class="success">CSV出力</button>
+            <button onclick="resetSchedule()" class="danger">リセット</button>
+        </div>
+        
+        <!-- 結果表示セクション -->
+        <div class="section">
+            <h2>生成された勤務表</h2>
+            <div id="scheduleResult"></div>
+            <div id="scheduleStats"></div>
+            <div id="scheduleSummary"></div>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数
+        let staffData = [];
+        let currentSchedule = null;
+        let scheduleMatrix = null;
+        let currentHolidayMode = {};
+        
+        // 勤務種別の定義（略語付き）
+        const shiftTypes = {
+            '早出': '早',
+            '準夜': '準',
+            '心カテ': '心',
+            'HBO': 'HBO',
+            '早HBO': '早HBO',
+            'OPE': 'OPE',
+            '内視鏡': '内',
+            'ME': 'ME',
+            '待機1': '待1',
+            '待機2': '待2',
+            '日勤': '日',
+            '公休': '公',
+            '年休': '年'
+        };
+        
+        // 各勤務の必要人数（曜日別）
+        const shiftRequirements = {
+            '早出': { default: 5, '早HBO時': 4 },
+            '準夜': { '月': 4, '火': 2, '水': 4, '木': 2, '金': 4, '土': 2, '日': 0 },
+            '心カテ': { '月': 1, '火': 2, '水': 1, '木': 2, '金': 1, '土': 1, '日': 0 },
+            'HBO': { default: 1 },
+            '早HBO': { default: 1 },
+            'OPE': { '月': 1, '火': 4, '水': 1, '木': 1, '金': 1, '土': 1, '日': 0 },
+            '内視鏡': { '月': 0, '火': 1, '水': 0, '木': 1, '金': 0, '土': 1, '日': 0 },
+            'ME': { '月': 2, '火': 2, '水': 1, '木': 1, '金': 2, '土': 2, '日': 0 },
+            '待機1': { default: 1 },
+            '待機2': { default: 1 }
+        };
+        
+        // 日本の祝日を取得する関数（簡易版）
+        function getJapaneseHolidays(year, month) {
+            const holidays = [];
+            const fixedHolidays = {
+                1: [1, 2, 3],
+                2: [11, 23],
+                3: [20, 21],
+                4: [29],
+                5: [3, 4, 5],
+                7: [15],
+                8: [11],
+                9: [15, 23],
+                10: [10],
+                11: [3, 23],
+                12: [29, 30, 31]
+            };
+            
+            if (fixedHolidays[month]) {
+                holidays.push(...fixedHolidays[month]);
+            }
+            
+            return holidays;
+        }
+        
+        // 第何週の何曜日かを判定する関数
+        function getWeekOfMonth(date) {
+            const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+            const firstDayOfWeek = firstDay.getDay();
+            const adjustedDate = date.getDate() + firstDayOfWeek - 1;
+            return Math.ceil(adjustedDate / 7);
+        }
+        
+        // 特定日の最大休日人数を取得
+        function getMaxHolidaysForDate(date, year, month) {
+            const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+            const day = date.getDate();
+            
+            // 祝日チェック
+            const specialHolidays = document.getElementById('specialHolidays').value
+                .split(',')
+                .map(d => parseInt(d.trim()))
+                .filter(d => !isNaN(d));
+            
+            const nationalHolidays = getJapaneseHolidays(year, month);
+            const isHoliday = specialHolidays.includes(day) || nationalHolidays.includes(day);
+            
+            if (isHoliday) {
+                const holidayMaxCount = parseInt(document.getElementById('holidayMaxCount').value);
+                return { max: holidayMaxCount, type: 'holiday', reason: '祝日' };
+            }
+            
+            // 特定週ルールチェック
+            const weekOfMonth = getWeekOfMonth(date);
+            const weeklyRules = document.querySelectorAll('.weekly-rule');
+            
+            for (let rule of weeklyRules) {
+                const ruleWeek = parseInt(rule.querySelector('.week-number').value);
+                const ruleDay = rule.querySelector('.week-day').value;
+                const ruleMax = parseInt(rule.querySelector('.week-max').value);
+                
+                if (weekOfMonth === ruleWeek && dayOfWeek === ruleDay) {
+                    return { 
+                        max: ruleMax, 
+                        type: 'special-week', 
+                        reason: `第${ruleWeek}週${ruleDay}曜日` 
+                    };
+                }
+            }
+            
+            // 通常の曜日別設定
+            const dayMaxInput = document.getElementById(`maxHoliday_${dayOfWeek}`);
+            if (dayMaxInput) {
+                return { 
+                    max: parseInt(dayMaxInput.value), 
+                    type: 'normal', 
+                    reason: `${dayOfWeek}曜日` 
+                };
+            }
+            
+            return { max: 4, type: 'default', reason: 'デフォルト' };
+        }
+        
+        // 特定週ルール追加
+        function addWeeklyRule() {
+            const container = document.getElementById('weeklySettings');
+            const ruleDiv = document.createElement('div');
+            ruleDiv.className = 'weekly-rule';
+            ruleDiv.innerHTML = `
+                <div class="flex-container">
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label>第何週:</label>
+                            <select class="week-number">
+                                <option value="1">第1週</option>
+                                <option value="2">第2週</option>
+                                <option value="3">第3週</option>
+                                <option value="4">第4週</option>
+                                <option value="5">第5週</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label>曜日:</label>
+                            <select class="week-day">
+                                <option value="月">月曜日</option>
+                                <option value="火">火曜日</option>
+                                <option value="水">水曜日</option>
+                                <option value="木">木曜日</option>
+                                <option value="金">金曜日</option>
+                                <option value="土">土曜日</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="input-group">
+                            <label>最大休日人数:</label>
+                            <input type="number" class="week-max" value="6" min="1" max="20">
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <button type="button" onclick="removeWeeklyRule(this)" class="danger" style="margin-top: 20px;">削除</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(ruleDiv);
+        }
+        
+        // 特定週ルール削除
+        function removeWeeklyRule(button) {
+            button.closest('.weekly-rule').remove();
+        }
+        
+        // スタッフ追加
+        function addStaff() {
+            const name = document.getElementById('staffName').value.trim();
+            if (!name) {
+                alert('スタッフ名を入力してください。');
+                return;
+            }
+            
+            if (staffData.find(s => s.name === name)) {
+                alert('同じ名前のスタッフが既に存在します。');
+                return;
+            }
+            
+            const staff = {
+                id: Date.now(),
+                name: name,
+                role: 'staff',
+                skills: Object.fromEntries(Object.keys(shiftTypes).filter(s => s !== '日勤' && s !== '公休' && s !== '年休').map(shift => [shift, false])),
+                publicHolidays: [],
+                paidLeave: []
+            };
+            
+            staffData.push(staff);
+            document.getElementById('staffName').value = '';
+            updateStaffDisplay();
+        }
+        
+        // スタッフ表示更新
+        function updateStaffDisplay() {
+            const container = document.getElementById('staffList');
+            container.innerHTML = '';
+            
+            staffData.forEach(staff => {
+                const staffDiv = document.createElement('div');
+                staffDiv.className = 'staff-item';
+                staffDiv.innerHTML = `
+                    <h4>
+                        <span class="role-indicator ${staff.role}"></span>
+                        ${staff.name} 
+                        <button onclick="removeStaff(${staff.id})" class="danger" style="font-size: 10px; padding: 2px 6px; float: right;">削除</button>
+                    </h4>
+                    
+                    <div class="input-group" style="margin-bottom: 10px;">
+                        <label>役職:</label>
+                        <select onchange="updateStaffRole(${staff.id}, this.value)" style="width: 100%; padding: 4px;">
+                            <option value="staff" ${staff.role === 'staff' ? 'selected' : ''}>平社員</option>
+                            <option value="supervisor" ${staff.role === 'supervisor' ? 'selected' : ''}>役職者</option>
+                        </select>
+                    </div>
+                    
+                    <label>対応可能業務:</label>
+                    <div class="checkbox-group">
+                        ${Object.keys(shiftTypes).filter(s => s !== '日勤' && s !== '公休' && s !== '年休').map(shift => `
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="skill_${staff.id}_${shift}" 
+                                       ${staff.skills[shift] ? 'checked' : ''}
+                                       onchange="updateStaffSkill(${staff.id}, '${shift}', this.checked)">
+                                <label for="skill_${staff.id}_${shift}">${shift}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="calendar-input">
+                        <label>休暇設定 (${new Date().getFullYear()}年${new Date().getMonth() + 1}月):</label>
+                        <div style="margin-bottom: 10px;">
+                            <button onclick="toggleCalendar(${staff.id})" style="font-size: 11px; padding: 5px 10px;">
+                                カレンダー表示切替
+                            </button>
+                            <span style="margin-left: 10px; font-size: 11px;">
+                                公休: <span style="background-color: #ffcdd2; padding: 2px 4px; border-radius: 3px;">${staff.publicHolidays.length}日</span>
+                                年休: <span style="background-color: #f8bbd9; padding: 2px 4px; border-radius: 3px;">${staff.paidLeave.length}日</span>
+                            </span>
+                        </div>
+                        <div id="calendar_${staff.id}" style="display: none;"></div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <div style="flex: 1;">
+                                <label for="publicHolidays_${staff.id}">公休 (例: 5,15,25):</label>
+                                <input type="text" id="publicHolidays_${staff.id}" 
+                                       value="${staff.publicHolidays.join(',')}"
+                                       onchange="updateStaffHolidays(${staff.id}, 'public', this.value)"
+                                       placeholder="公休日を入力（カンマ区切り）"
+                                       style="font-size: 11px; padding: 4px;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label for="paidLeave_${staff.id}">年休 (例: 10,20,30):</label>
+                                <input type="text" id="paidLeave_${staff.id}" 
+                                       value="${staff.paidLeave.join(',')}"
+                                       onchange="updateStaffHolidays(${staff.id}, 'paid', this.value)"
+                                       placeholder="年休日を入力（カンマ区切り）"
+                                       style="font-size: 11px; padding: 4px;">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(staffDiv);
+            });
+        }
+        
+        // 役職更新
+        function updateStaffRole(staffId, role) {
+            const staff = staffData.find(s => s.id === staffId);
+            if (staff) {
+                staff.role = role;
+                updateStaffDisplay();
+            }
+        }
+        
+        // 休暇更新（公休・年休別）
+        function updateStaffHolidays(staffId, type, value) {
+            const staff = staffData.find(s => s.id === staffId);
+            if (staff) {
+                const holidays = value.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d) && d >= 1 && d <= 31);
+                if (type === 'public') {
+                    staff.publicHolidays = holidays;
+                } else if (type === 'paid') {
+                    staff.paidLeave = holidays;
+                }
+                updateStaffDisplay();
+            }
+        }
+        
+        // カレンダー表示切替
+        function toggleCalendar(staffId) {
+            const calendarDiv = document.getElementById(`calendar_${staffId}`);
+            if (calendarDiv.style.display === 'none') {
+                showCalendar(staffId);
+                calendarDiv.style.display = 'block';
+            } else {
+                calendarDiv.style.display = 'none';
+            }
+        }
+        
+        // カレンダー表示
+        function showCalendar(staffId) {
+            const staff = staffData.find(s => s.id === staffId);
+            const year = parseInt(document.getElementById('year').value);
+            const month = parseInt(document.getElementById('month').value);
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const firstDay = new Date(year, month - 1, 1).getDay();
+            
+            const calendarDiv = document.getElementById(`calendar_${staffId}`);
+            let html = '<div class="calendar-grid">';
+            
+            // 曜日ヘッダー
+            const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+            dayNames.forEach(day => {
+                html += `<div class="calendar-header">${day}</div>`;
+            });
+            
+            // 前月の空白セル
+            for (let i = 0; i < firstDay; i++) {
+                html += '<div class="calendar-day"></div>';
+            }
+            
+            // 日付セル
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month - 1, day);
+                const dayOfWeek = date.getDay();
+                const isPublicHoliday = staff.publicHolidays.includes(day);
+                const isPaidLeave = staff.paidLeave.includes(day);
+                
+                let cellClass = 'calendar-day';
+                if (dayOfWeek === 0) cellClass += ' sunday';
+                if (isPublicHoliday) cellClass += ' public-holiday';
+                if (isPaidLeave) cellClass += ' paid-leave';
+                
+                html += `
+                    <div class="${cellClass}" onclick="toggleDayHoliday(${staffId}, ${day})">
+                        <div>${day}</div>
+                        ${isPublicHoliday ? '<div style="font-size: 8px;">公</div>' : ''}
+                        ${isPaidLeave ? '<div style="font-size: 8px;">年</div>' : ''}
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            html += `
+                <div style="margin-top: 10px; font-size: 11px;">
+                    <p>クリックで休暇設定:</p>
+                    <button onclick="setHolidayType(${staffId}, 'public')" style="background-color: #ffcdd2; font-size: 10px; padding: 3px 6px; margin-right: 5px;">公休モード</button>
+                    <button onclick="setHolidayType(${staffId}, 'paid')" style="background-color: #f8bbd9; font-size: 10px; padding: 3px 6px; margin-right: 5px;">年休モード</button>
+                    <button onclick="setHolidayType(${staffId}, 'clear')" style="background-color: #e0e0e0; font-size: 10px; padding: 3px 6px;">クリア</button>
+                </div>
+            `;
+            
+            calendarDiv.innerHTML = html;
+        }
+        
+        // 休暇タイプ設定
+        function setHolidayType(staffId, type) {
+            currentHolidayMode[staffId] = type;
+        }
+        
+        // 日付クリックで休暇切替
+        function toggleDayHoliday(staffId, day) {
+            const staff = staffData.find(s => s.id === staffId);
+            if (!staff) return;
+            
+            const mode = currentHolidayMode[staffId] || 'public';
+            const isPublicHoliday = staff.publicHolidays.includes(day);
+            const isPaidLeave = staff.paidLeave.includes(day);
+            
+            if (mode === 'public') {
+                if (isPublicHoliday) {
+                    staff.publicHolidays = staff.publicHolidays.filter(d => d !== day);
+                } else {
+                    staff.publicHolidays.push(day);
+                    staff.paidLeave = staff.paidLeave.filter(d => d !== day);
+                }
+            } else if (mode === 'paid') {
+                if (isPaidLeave) {
+                    staff.paidLeave = staff.paidLeave.filter(d => d !== day);
+                } else {
+                    staff.paidLeave.push(day);
+                    staff.publicHolidays = staff.publicHolidays.filter(d => d !== day);
+                }
+            } else if (mode === 'clear') {
+                staff.publicHolidays = staff.publicHolidays.filter(d => d !== day);
+                staff.paidLeave = staff.paidLeave.filter(d => d !== day);
+            }
+            
+            // 入力欄も更新
+            document.getElementById(`publicHolidays_${staffId}`).value = staff.publicHolidays.join(',');
+            document.getElementById(`paidLeave_${staffId}`).value = staff.paidLeave.join(',');
+            
+            // カレンダーを再描画
+            showCalendar(staffId);
+        }
+        
+        // スタッフスキル更新
+        function updateStaffSkill(staffId, skill, checked) {
+            const staff = staffData.find(s => s.id === staffId);
+            if (staff) {
+                staff.skills[skill] = checked;
+            }
+        }
+        
+        // スタッフ削除
+        function removeStaff(staffId) {
+            if (confirm('このスタッフを削除しますか？')) {
+                staffData = staffData.filter(s => s.id !== staffId);
+                updateStaffDisplay();
+            }
+        }
+        
+        // 全スタッフクリア
+        function clearAllStaff() {
+            if (confirm('全スタッフを削除しますか？')) {
+                staffData = [];
+                updateStaffDisplay();
+            }
+        }
+        
+        // 28名データ読み込み
+        function load28StaffData() {
+            if (staffData.length > 0 && !confirm('既存のスタッフデータが削除されます。続行しますか？')) {
+                return;
+            }
+            
+            const staff28 = [
+                { name: '佐藤（主任）', role: 'supervisor', skills: ['早出', '準夜', '心カテ', 'OPE', 'ME', '待機1'] },
+                { name: '田中（師長）', role: 'supervisor', skills: ['早出', '準夜', 'HBO', 'OPE', 'ME', '待機1', '待機2'] },
+                { name: '山田（主任）', role: 'supervisor', skills: ['早出', '準夜', '内視鏡', 'ME', '待機2'] },
+                { name: '鈴木（係長）', role: 'supervisor', skills: ['早出', '準夜', '心カテ', 'ME', '待機1'] },
+                { name: '高橋（主任）', role: 'supervisor', skills: ['早出', '準夜', 'OPE', '内視鏡', '待機2'] },
+                { name: '伊藤', role: 'staff', skills: ['早出', '準夜', 'HBO', 'ME'] },
+                { name: '渡辺', role: 'staff', skills: ['早出', '準夜', '心カテ', 'OPE'] },
+                { name: '中村', role: 'staff', skills: ['早出', '準夜', '内視鏡', 'ME'] },
+                { name: '小林', role: 'staff', skills: ['早出', '準夜', 'OPE', 'ME'] },
+                { name: '加藤', role: 'staff', skills: ['早出', '準夜', 'HBO', '心カテ'] },
+                { name: '吉田', role: 'staff', skills: ['早出', '準夜', 'ME', 'OPE'] },
+                { name: '山本', role: 'staff', skills: ['早出', '準夜', '内視鏡', '心カテ'] },
+                { name: '松本', role: 'staff', skills: ['早出', '準夜', 'OPE', 'ME'] },
+                { name: '井上', role: 'staff', skills: ['早出', '準夜', 'HBO', 'ME'] },
+                { name: '木村', role: 'staff', skills: ['早出', '準夜', '心カテ', '内視鏡'] },
+                { name: '林', role: 'staff', skills: ['早出', '準夜', 'OPE', 'ME'] },
+                { name: '清水', role: 'staff', skills: ['早出', '準夜', 'HBO', '心カテ'] },
+                { name: '山口', role: 'staff', skills: ['早出', '準夜', 'ME', 'OPE'] },
+                { name: '阿部', role: 'staff', skills: ['早出', '準夜', '内視鏡', 'ME'] },
+                { name: '森', role: 'staff', skills: ['早出', '準夜', '心カテ', 'OPE'] },
+                { name: '池田', role: 'staff', skills: ['早出', '準夜', 'HBO', 'ME'] },
+                { name: '橋本', role: 'staff', skills: ['早出', '準夜', 'OPE', '内視鏡'] },
+                { name: '山崎', role: 'staff', skills: ['早出', '準夜', 'ME', '心カテ'] },
+                { name: '石川', role: 'staff', skills: ['早出', '準夜', 'HBO', 'OPE'] },
+                { name: '斎藤', role: 'staff', skills: ['早出', '準夜', '内視鏡', 'ME'] },
+                { name: '前田', role: 'staff', skills: ['早出', '準夜', '心カテ', 'ME'] },
+                { name: '藤田', role: 'staff', skills: ['早出', '準夜', 'OPE', 'HBO'] },
+                { name: '後藤', role: 'staff', skills: ['早出', '準夜', 'ME', '内視鏡'] }
+            ];
+            
+            staffData = [];
+            staff28.forEach((sample, index) => {
+                const staff = {
+                    id: Date.now() + index,
+                    name: sample.name,
+                    role: sample.role,
+                    skills: Object.fromEntries(Object.keys(shiftTypes).filter(s => s !== '日勤' && s !== '公休' && s !== '年休').map(shift => 
+                        [shift, sample.skills.includes(shift)])),
+                    publicHolidays: [],
+                    paidLeave: []
+                };
+                staffData.push(staff);
+            });
+            
+            updateStaffDisplay();
+        }
+        
+        // サンプルデータ読み込み
+        function loadSampleData() {
+            if (staffData.length > 0 && !confirm('既存のスタッフデータが削除されます。続行しますか？')) {
+                return;
+            }
+            
+            const sampleStaff = [
+                { name: '主任A', role: 'supervisor', skills: ['早出', '準夜', '心カテ', 'OPE', 'ME', '待機1'], publicHolidays: [5, 15], paidLeave: [] },
+                { name: 'スタッフB', role: 'staff', skills: ['早出', '準夜', 'HBO', 'OPE'], publicHolidays: [10], paidLeave: [20] },
+                { name: 'スタッフC', role: 'staff', skills: ['早出', '準夜', '内視鏡', 'ME'], publicHolidays: [3], paidLeave: [25] },
+                { name: '係長D', role: 'supervisor', skills: ['早出', '準夜', '心カテ', 'ME', '待機2'], publicHolidays: [8], paidLeave: [18] },
+                { name: 'スタッフE', role: 'staff', skills: ['早出', '準夜', 'OPE', '内視鏡'], publicHolidays: [12], paidLeave: [28] }
+            ];
+            
+            staffData = [];
+            sampleStaff.forEach((sample, index) => {
+                const staff = {
+                    id: Date.now() + index,
+                    name: sample.name,
+                    role: sample.role,
+                    skills: Object.fromEntries(Object.keys(shiftTypes).filter(s => s !== '日勤' && s !== '公休' && s !== '年休').map(shift => 
+                        [shift, sample.skills.includes(shift)])),
+                    publicHolidays: sample.publicHolidays || [],
+                    paidLeave: sample.paidLeave || []
+                };
+                staffData.push(staff);
+            });
+            
+            updateStaffDisplay();
+        }
+        
+        // 勤務表生成
+        function generateSchedule() {
+            if (staffData.length === 0) {
+                alert('スタッフを追加してください。');
+                return;
+            }
+            
+            const year = parseInt(document.getElementById('year').value);
+            const month = parseInt(document.getElementById('month').value);
+            const maxMonthlyHolidays = parseInt(document.getElementById('maxMonthlyHolidays').value);
+            
+            // 月の日数を取得
+            const daysInMonth = new Date(year, month, 0).getDate();
+            
+            // 勤務表マトリックス初期化
+            scheduleMatrix = {};
+            staffData.forEach(staff => {
+                scheduleMatrix[staff.name] = {};
+                for (let day = 1; day <= daysInMonth; day++) {
+                    scheduleMatrix[staff.name][day] = '';
+                }
+            });
+            
+            // 公休・年休設定
+            staffData.forEach(staff => {
+                staff.publicHolidays.forEach(day => {
+                    if (day <= daysInMonth) {
+                        scheduleMatrix[staff.name][day] = '公';
+                    }
+                });
+                staff.paidLeave.forEach(day => {
+                    if (day <= daysInMonth) {
+                        scheduleMatrix[staff.name][day] = '年';
+                    }
+                });
+            });
+            
+            // 日曜日は全員公休
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month - 1, day);
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek === 0) {
+                    staffData.forEach(staff => {
+                        if (scheduleMatrix[staff.name][day] === '') {
+                            scheduleMatrix[staff.name][day] = '公';
+                        }
+                    });
+                }
+            }
+            
+            // 勤務割り当て実行
+            const result = assignAdvancedShifts(year, month, daysInMonth, maxMonthlyHolidays);
+            
+            currentSchedule = result;
+            displayAdvancedSchedule(year, month, daysInMonth);
+            displayAdvancedStats();
+            displaySummary();
+        }
+        // 高度な勤務割り当てロジック
+        function assignAdvancedShifts(year, month, daysInMonth, maxMonthlyHolidays) {
+            const staffStats = {};
+            staffData.forEach(staff => {
+                staffStats[staff.name] = {
+                    '早出': 0, '準夜': 0, '心カテ': 0, 'HBO': 0, '早HBO': 0,
+                    'OPE': 0, '内視鏡': 0, 'ME': 0, '待機1': 0, '待機2': 0,
+                    '日勤': 0, '公休': 0, '年休': 0,
+                    consecutiveDays: 0, lastShift: null
+                };
+            });
+            
+            const warnings = [];
+            const holidayInfo = {};
+            
+            // 日別処理
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month - 1, day);
+                const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+                
+                if (dayOfWeek === '日') continue;
+                
+                const holidayConstraint = getMaxHolidaysForDate(date, year, month);
+                holidayInfo[day] = holidayConstraint;
+                
+                const availableStaff = staffData.filter(staff => 
+                    scheduleMatrix[staff.name][day] === '' || scheduleMatrix[staff.name][day] === '日'
+                );
+                
+                assignDayShifts(day, dayOfWeek, availableStaff, staffStats, warnings);
+                
+                // 残りのスタッフは日勤
+                staffData.forEach(staff => {
+                    if (scheduleMatrix[staff.name][day] === '') {
+                        scheduleMatrix[staff.name][day] = '日';
+                        staffStats[staff.name]['日勤']++;
+                    }
+                });
+                
+                const currentHolidays = staffData.filter(staff => 
+                    scheduleMatrix[staff.name][day] === '公' || scheduleMatrix[staff.name][day] === '年'
+                ).length;
+                
+                if (currentHolidays > holidayConstraint.max) {
+                    warnings.push(`${day}日(${dayOfWeek}): 休日${currentHolidays}人が上限${holidayConstraint.max}人(${holidayConstraint.reason})を超過`);
+                }
+            }
+            
+            return { matrix: scheduleMatrix, stats: staffStats, warnings: warnings, holidayInfo: holidayInfo };
+        }
+        
+        // 1日の勤務割り当て
+        function assignDayShifts(day, dayOfWeek, availableStaff, staffStats, warnings) {
+            const requireSupervisor = document.getElementById('requireSupervisor').checked;
+            
+            // 待機1・待機2の割り当て（毎日1名ずつ必須）
+            assignStandbyShifts(day, availableStaff, staffStats);
+            
+            // HBO/早HBO優先割り当て
+            const hboRequired = Math.random() > 0.5;
+            if (hboRequired) {
+                const hboStaff = availableStaff.filter(staff => 
+                    (staff.skills['HBO'] || staff.skills['早HBO']) && scheduleMatrix[staff.name][day] === ''
+                );
+                
+                if (hboStaff.length > 0) {
+                    const selected = selectStaffByBalance(hboStaff, 1, staffStats, 'HBO')[0];
+                    if (selected) {
+                        const isEarlyHBO = selected.skills['早HBO'] && Math.random() > 0.5;
+                        scheduleMatrix[selected.name][day] = isEarlyHBO ? '早HBO' : 'HBO';
+                        staffStats[selected.name][isEarlyHBO ? '早HBO' : 'HBO']++;
+                        removeFromList(availableStaff, selected);
+                    }
+                }
+            }
+            
+            assignSpecialShifts(day, dayOfWeek, availableStaff, staffStats);
+            
+            // 準夜割り当て（役職者必須チェック）
+            const nightReq = shiftRequirements['準夜'][dayOfWeek] || 0;
+            if (nightReq > 0) {
+                const nightStaff = availableStaff.filter(staff => 
+                    staff.skills['準夜'] && scheduleMatrix[staff.name][day] === ''
+                );
+                
+                let selected;
+                if (requireSupervisor) {
+                    selected = assignWithSupervisor(nightStaff, nightReq, staffStats, '準夜');
+                    if (selected.length === 0) {
+                        warnings.push(`${day}日: 準夜に役職者を配置できませんでした`);
+                        selected = selectStaffByBalance(nightStaff, nightReq, staffStats, '準夜');
+                    }
+                } else {
+                    selected = selectStaffByBalance(nightStaff, nightReq, staffStats, '準夜');
+                }
+                
+                selected.forEach(staff => {
+                    scheduleMatrix[staff.name][day] = '準';
+                    staffStats[staff.name]['準夜']++;
+                    removeFromList(availableStaff, staff);
+                });
+            }
+            
+            // 早出割り当て（役職者必須チェック）
+            const earlyReq = Object.keys(scheduleMatrix).some(name => 
+                scheduleMatrix[name][day] === '早HBO') ? 4 : 5;
+            const earlyStaff = availableStaff.filter(staff => 
+                staff.skills['早出'] && scheduleMatrix[staff.name][day] === ''
+            );
+            
+            let selectedEarly;
+            if (requireSupervisor) {
+                selectedEarly = assignWithSupervisor(earlyStaff, earlyReq, staffStats, '早出');
+                if (selectedEarly.length === 0) {
+                    warnings.push(`${day}日: 早出に役職者を配置できませんでした`);
+                    selectedEarly = selectStaffByBalance(earlyStaff, earlyReq, staffStats, '早出');
+                }
+            } else {
+                selectedEarly = selectStaffByBalance(earlyStaff, earlyReq, staffStats, '早出');
+            }
+            
+            selectedEarly.forEach(staff => {
+                scheduleMatrix[staff.name][day] = '早';
+                staffStats[staff.name]['早出']++;
+                removeFromList(availableStaff, staff);
+            });
+        }
+        
+        // 待機勤務割り当て
+        function assignStandbyShifts(day, availableStaff, staffStats) {
+            // 待機1割り当て
+            const standby1Staff = availableStaff.filter(staff => 
+                staff.skills['待機1'] && scheduleMatrix[staff.name][day] === ''
+            );
+            if (standby1Staff.length > 0) {
+                const selected = selectStaffByBalance(standby1Staff, 1, staffStats, '待機1')[0];
+                if (selected) {
+                    scheduleMatrix[selected.name][day] = '待1';
+                    staffStats[selected.name]['待機1']++;
+                    removeFromList(availableStaff, selected);
+                }
+            }
+            
+            // 待機2割り当て
+            const standby2Staff = availableStaff.filter(staff => 
+                staff.skills['待機2'] && scheduleMatrix[staff.name][day] === ''
+            );
+            if (standby2Staff.length > 0) {
+                const selected = selectStaffByBalance(standby2Staff, 1, staffStats, '待機2')[0];
+                if (selected) {
+                    scheduleMatrix[selected.name][day] = '待2';
+                    staffStats[selected.name]['待機2']++;
+                    removeFromList(availableStaff, selected);
+                }
+            }
+        }
+        
+        // 役職者を含む割り当て
+        function assignWithSupervisor(candidates, count, staffStats, shiftType) {
+            if (candidates.length === 0) return [];
+            
+            const supervisors = candidates.filter(staff => staff.role === 'supervisor');
+            const regularStaff = candidates.filter(staff => staff.role === 'staff');
+            
+            // 最低1名の役職者を含める
+            if (supervisors.length === 0) return [];
+            
+            let selected = [];
+            
+            // まず役職者から1名選択
+            const selectedSupervisor = selectStaffByBalance(supervisors, 1, staffStats, shiftType);
+            selected.push(...selectedSupervisor);
+            
+            // 残りを一般スタッフから選択
+            if (count > 1) {
+                const remainingCount = count - selected.length;
+                const remainingStaff = selectStaffByBalance(regularStaff, remainingCount, staffStats, shiftType);
+                selected.push(...remainingStaff);
+            }
+            
+            return selected;
+        }
+        
+        // 特殊業務割り当て
+        function assignSpecialShifts(day, dayOfWeek, availableStaff, staffStats) {
+            const specialShifts = ['心カテ', 'OPE', '内視鏡', 'ME'];
+            const shiftAbbrev = { '心カテ': '心', 'OPE': 'OPE', '内視鏡': '内', 'ME': 'ME' };
+            
+            specialShifts.forEach(shift => {
+                const req = shiftRequirements[shift][dayOfWeek] || 0;
+                if (req > 0) {
+                    const shiftStaff = availableStaff.filter(staff => 
+                        staff.skills[shift] && scheduleMatrix[staff.name][day] === ''
+                    );
+                    const selected = selectStaffByBalance(shiftStaff, req, staffStats, shift);
+                    selected.forEach(staff => {
+                        scheduleMatrix[staff.name][day] = shiftAbbrev[shift];
+                        staffStats[staff.name][shift]++;
+                        removeFromList(availableStaff, staff);
+                    });
+                }
+            });
+        }
+        
+        // バランスを考慮したスタッフ選択
+        function selectStaffByBalance(candidates, count, staffStats, shiftType) {
+            if (candidates.length === 0) return [];
+            
+            const sorted = candidates.sort((a, b) => {
+                const aCount = staffStats[a.name][shiftType] || 0;
+                const bCount = staffStats[b.name][shiftType] || 0;
+                if (aCount !== bCount) return aCount - bCount;
+                
+                const aTotalDays = Object.values(staffStats[a.name]).reduce((sum, val) => 
+                    typeof val === 'number' ? sum + val : sum, 0);
+                const bTotalDays = Object.values(staffStats[b.name]).reduce((sum, val) => 
+                    typeof val === 'number' ? sum + val : sum, 0);
+                return aTotalDays - bTotalDays;
+            });
+            
+            return sorted.slice(0, Math.min(count, sorted.length));
+        }
+        
+        // リストから要素を削除
+        function removeFromList(list, item) {
+            const index = list.indexOf(item);
+            if (index !== -1) {
+                list.splice(index, 1);
+            }
+        }
+        
+        // 必要人数取得
+        function getRequiredCount(shift, dayOfWeek) {
+            const req = shiftRequirements[shift];
+            if (!req) return 0;
+            
+            if (req[dayOfWeek] !== undefined) {
+                return req[dayOfWeek];
+            }
+            
+            return req.default || 0;
+        }
+        
+        // 実際の割り当て人数をカウント
+        function countActualAssignments(shift, day, abbrev) {
+            if (!scheduleMatrix) return 0;
+            
+            let count = 0;
+            Object.keys(scheduleMatrix).forEach(staffName => {
+                if (scheduleMatrix[staffName][day] === abbrev) {
+                    count++;
+                }
+            });
+            
+            return count;
+        }
+        
+        // 勤務表表示
+        function displayAdvancedSchedule(year, month, daysInMonth) {
+            const container = document.getElementById('scheduleResult');
+            
+            let html = `
+                <h3>${year}年${month}月 勤務表</h3>
+                <div style="overflow-x: auto;">
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th class="staff-name">スタッフ名</th>
+            `;
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month - 1, day);
+                const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+                const holidayConstraint = getMaxHolidaysForDate(date, year, month);
+                
+                let colClass = dayOfWeek === '日' ? 'sunday-col' : (dayOfWeek === '土' ? 'saturday-col' : '');
+                
+                if (holidayConstraint.type === 'holiday') {
+                    colClass += ' holiday-indicator';
+                } else if (holidayConstraint.type === 'special-week') {
+                    colClass += ' special-week-indicator';
+                }
+                
+                html += `<th class="date-header ${colClass}" title="${holidayConstraint.reason}: 最大${holidayConstraint.max}人">${day}<br>${dayOfWeek}<br><small>max${holidayConstraint.max}</small></th>`;
+            }
+            
+            html += `
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            staffData.forEach(staff => {
+                html += `<tr><td class="staff-name">${staff.name}</td>`;
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month - 1, day);
+                    const dayOfWeek = date.getDay();
+                    const shift = scheduleMatrix[staff.name][day] || '';
+                    const holidayConstraint = getMaxHolidaysForDate(date, year, month);
+                    
+                    let colClass = dayOfWeek === 0 ? 'sunday-col' : (dayOfWeek === 6 ? 'saturday-col' : '');
+                    let cellClass = (shift === '公' || shift === '年') ? 'holiday-cell' : `shift-${shift}`;
+                    
+                    if (shift === '公' || shift === '年') {
+                        const currentHolidays = staffData.filter(s => 
+                            scheduleMatrix[s.name][day] === '公' || scheduleMatrix[s.name][day] === '年'
+                        ).length;
+                        
+                        if (currentHolidays > holidayConstraint.max) {
+                            cellClass += ' error-cell';
+                        }
+                    }
+                    
+                    html += `
+                        <td class="editable-cell ${colClass} ${cellClass}" 
+                            onclick="editCell('${staff.name}', ${day})"
+                            data-staff="${staff.name}" 
+                            data-day="${day}"
+                            title="制約: ${holidayConstraint.reason} (最大${holidayConstraint.max}人)">
+                            ${shift}
+                        </td>
+                    `;
+                }
+                
+                html += '</tr>';
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+                </div>
+            `;
+            
+            html += generateRequirementTable(year, month, daysInMonth);
+            container.innerHTML = html;
+        }
+        
+        // 必要人数チェック表生成
+        function generateRequirementTable(year, month, daysInMonth) {
+            let html = `
+                <h4>必要人数チェック</h4>
+                <div style="overflow-x: auto;">
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th>勤務</th>
+            `;
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                html += `<th style="writing-mode: vertical-rl; width: 25px;">${day}</th>`;
+            }
+            
+            html += '</tr></thead><tbody>';
+            
+            const shifts = ['早出', '準夜', '心カテ', 'HBO', 'OPE', '内視鏡', 'ME', '待機1', '待機2'];
+            const shiftAbbrev = { '早出': '早', '準夜': '準', '心カテ': '心', 'HBO': 'HBO', 'OPE': 'OPE', '内視鏡': '内', 'ME': 'ME', '待機1': '待1', '待機2': '待2' };
+            
+            shifts.forEach(shift => {
+                html += `<tr><td>${shift}</td>`;
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month - 1, day);
+                    const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+                    
+                    const required = getRequiredCount(shift, dayOfWeek);
+                    const actual = countActualAssignments(shift, day, shiftAbbrev[shift]);
+                    
+                    const cellClass = actual < required ? 'error-cell' : '';
+                    html += `<td class="${cellClass}">${actual}/${required}</td>`;
+                }
+                
+                html += '</tr>';
+            });
+            
+            html += `<tr><td>休日</td>`;
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month - 1, day);
+                const holidayConstraint = getMaxHolidaysForDate(date, year, month);
+                const actualHolidays = staffData.filter(staff => {
+                    const shift = scheduleMatrix[staff.name] && scheduleMatrix[staff.name][day];
+                    return shift === '公' || shift === '年';
+                }).length;
+                
+                const cellClass = actualHolidays > holidayConstraint.max ? 'error-cell' : '';
+                const bgClass = holidayConstraint.type === 'holiday' ? 'holiday-indicator' : 
+                              holidayConstraint.type === 'special-week' ? 'special-week-indicator' : '';
+                
+                html += `<td class="${cellClass} ${bgClass}" title="${holidayConstraint.reason}">${actualHolidays}/${holidayConstraint.max}</td>`;
+            }
+            html += '</tr>';
+            
+            html += '</tbody></table></div>';
+            return html;
+        }
+        
+        // 統計表示
+        function displayAdvancedStats() {
+            const container = document.getElementById('scheduleStats');
+            
+            if (!currentSchedule) return;
+            
+            const { stats, warnings, holidayInfo } = currentSchedule;
+            
+            let html = '<div class="stats">';
+            
+            let totalEarly = 0, totalNight = 0, totalPublicHolidays = 0, totalPaidLeave = 0;
+            Object.values(stats).forEach(stat => {
+                totalEarly += stat['早出'] || 0;
+                totalNight += stat['準夜'] || 0;
+                totalPublicHolidays += stat['公休'] || 0;
+                totalPaidLeave += stat['年休'] || 0;
+            });
+            
+            let holidayViolations = 0;
+            if (warnings) {
+                holidayViolations = warnings.filter(w => w.includes('休日') && w.includes('超過')).length;
+            }
+            
+            html += `
+                <div class="stat-card">
+                    <div class="stat-number">${totalEarly}</div>
+                    <div>早出総数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${totalNight}</div>
+                    <div>準夜総数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${totalPublicHolidays}</div>
+                    <div>公休総数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${totalPaidLeave}</div>
+                    <div>年休総数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: ${holidayViolations > 0 ? '#e74c3c' : '#27ae60'}">${holidayViolations}</div>
+                    <div>休日制約違反</div>
+                </div>
+            `;
+            
+            html += '</div>';
+            
+            if (holidayInfo) {
+                html += '<div class="constraints-summary" style="margin-top: 15px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">';
+                html += '<h4>制約適用サマリー</h4>';
+                
+                const constraintCounts = {};
+                Object.values(holidayInfo).forEach(info => {
+                    const key = `${info.reason} (${info.max}人)`;
+                    constraintCounts[key] = (constraintCounts[key] || 0) + 1;
+                });
+                
+                html += '<div class="flex-container">';
+                Object.entries(constraintCounts).forEach(([constraint, count]) => {
+                    html += `
+                        <div class="stat-card">
+                            <div class="stat-number">${count}</div>
+                            <div style="font-size: 11px;">${constraint}</div>
+                        </div>
+                    `;
+                });
+                html += '</div></div>';
+            }
+            
+            if (warnings && warnings.length > 0) {
+                html += '<div class="warning"><h4>警告・制約違反</h4><ul>';
+                warnings.forEach(warning => {
+                    html += `<li>${warning}</li>`;
+                });
+                html += '</ul></div>';
+            } else {
+                html += '<div class="success-msg">すべての制約条件を満たしています</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // セル編集機能
+        function editCell(staffName, day) {
+            const cell = document.querySelector(`[data-staff="${staffName}"][data-day="${day}"]`);
+            const currentValue = cell.textContent.trim();
+            
+            const options = ['', '早', '準', '心', 'HBO', '早HBO', 'OPE', '内', 'ME', '待1', '待2', '日', '公', '年'];
+            
+            const select = document.createElement('select');
+            select.className = 'cell-select';
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = option || '(空白)';
+                if (option === currentValue) opt.selected = true;
+                select.appendChild(opt);
+            });
+            
+            select.addEventListener('change', () => {
+                scheduleMatrix[staffName][day] = select.value;
+                cell.textContent = select.value;
+                cell.className = cell.className.replace(/shift-\w+/g, '');
+                if (select.value) {
+                    if (select.value === '公' || select.value === '年') {
+                        cell.classList.add('holiday-cell');
+                    } else {
+                        cell.classList.add(`shift-${select.value}`);
+                    }
+                }
+                cell.innerHTML = select.value;
+            });
+            
+            select.addEventListener('blur', () => {
+                cell.innerHTML = select.value;
+            });
+            
+            cell.innerHTML = '';
+            cell.appendChild(select);
+            select.focus();
+        }
+        
+        // 個人別サマリー表示
+        function displaySummary() {
+            const container = document.getElementById('scheduleSummary');
+            
+            if (!currentSchedule) return;
+            
+            const { stats } = currentSchedule;
+            
+            let html = `
+                <h4>個人別勤務サマリー</h4>
+                <div style="overflow-x: auto;">
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th>スタッフ名</th>
+                            <th>早出</th>
+                            <th>準夜</th>
+                            <th>心カテ</th>
+                            <th>HBO</th>
+                            <th>OPE</th>
+                            <th>内視鏡</th>
+                            <th>ME</th>
+                            <th>待機1</th>
+                            <th>待機2</th>
+                            <th>日勤</th>
+                            <th>公休</th>
+                            <th>年休</th>
+                            <th>合計</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            staffData.forEach(staff => {
+                const stat = stats[staff.name] || {};
+                const total = Object.values(stat).reduce((sum, val) => 
+                    typeof val === 'number' ? sum + val : sum, 0);
+                
+                html += `
+                    <tr>
+                        <td>${staff.name}</td>
+                        <td>${stat['早出'] || 0}</td>
+                        <td>${stat['準夜'] || 0}</td>
+                        <td>${stat['心カテ'] || 0}</td>
+                        <td>${(stat['HBO'] || 0) + (stat['早HBO'] || 0)}</td>
+                        <td>${stat['OPE'] || 0}</td>
+                        <td>${stat['内視鏡'] || 0}</td>
+                        <td>${stat['ME'] || 0}</td>
+                        <td>${stat['待機1'] || 0}</td>
+                        <td>${stat['待機2'] || 0}</td>
+                        <td>${stat['日勤'] || 0}</td>
+                        <td>${staff.publicHolidays.length}</td>
+                        <td>${staff.paidLeave.length}</td>
+                        <td><strong>${total}</strong></td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+        
+        // CSVエクスポート
+        function exportToCSV() {
+            if (!currentSchedule || !scheduleMatrix) {
+                alert('先に勤務表を生成してください。');
+                return;
+            }
+            
+            const year = parseInt(document.getElementById('year').value);
+            const month = parseInt(document.getElementById('month').value);
+            const daysInMonth = new Date(year, month, 0).getDate();
+            
+            let csv = 'スタッフ名';
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month - 1, day);
+                const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+                csv += `,${day}(${dayOfWeek})`;
+            }
+            csv += '\n';
+            
+            staffData.forEach(staff => {
+                csv += staff.name;
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const shift = scheduleMatrix[staff.name][day] || '';
+                    csv += `,${shift}`;
+                }
+                csv += '\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `勤務表_${year}年${month}月.csv`;
+            link.click();
+        }
+        
+        // リセット
+        function resetSchedule() {
+            if (confirm('勤務表をリセットしますか？')) {
+                currentSchedule = null;
+                scheduleMatrix = null;
+                document.getElementById('scheduleResult').innerHTML = '';
+                document.getElementById('scheduleStats').innerHTML = '';
+                document.getElementById('scheduleSummary').innerHTML = '';
+            }
+        }
+        
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStaffDisplay();
+        });
+    </script>
+</body>
+</html>
